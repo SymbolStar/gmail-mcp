@@ -1,12 +1,11 @@
 {
-  "name": "gmail-mcp-server",
-  "version": "0.1.0",
+  "name": "@symbolstar/gmail-mcp",
+  "version": "0.0.1",
   "description": "Gmail MCP server for reading Gmail messages via Model Context Protocol.",
   "type": "module",
   "main": "dist/src/index.js",
   "bin": {
-    "gmail-mcp": "dist/src/index.js",
-    "gmail-mcp-server": "dist/src/index.js"
+    "gmail-mcp": "dist/src/index.js"
   },
   "files": [
     "dist",
