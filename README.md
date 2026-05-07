@@ -1,195 +1,202 @@
-# Gmail MCP Server
+# @symbolstar/gmail-mcp
 
-Gmail MCP Server 是一个基于 Node.js/TypeScript 的 MCP stdio server，用于让 OpenClaw 通过 Model Context Protocol 读取 Gmail 邮件。
+A Node.js/TypeScript MCP (Model Context Protocol) stdio server that lets AI assistants like **OpenClaw** read your Gmail via the Gmail API.
 
-## 功能
+## Features
 
-- 使用 Gmail API OAuth 2.0 授权，权限范围为只读：`https://www.googleapis.com/auth/gmail.readonly`
-- `list_emails`：列出收件箱邮件，支持 `maxResults` 和 Gmail `query` 过滤
-- `get_email`：通过 `messageId` 读取单封邮件详情
-- `search_emails`：通过 Gmail 搜索语法搜索邮件
-- `list_labels`：列出所有 Gmail 标签/文件夹
-- 支持 MCP stdio transport，可供 OpenClaw 调用
+- OAuth 2.0 authorization with Gmail read-only scope
+- `list_emails` — list inbox emails with optional filters
+- `get_email` — read a single email by message ID
+- `search_emails` — search with Gmail query syntax
+- `list_labels` — list all Gmail labels/folders
+- Works with any MCP-compatible client (OpenClaw, Claude Desktop, etc.)
 
-## 环境要求
+---
 
-- Node.js 18 或更高版本
-- npm
-- 一个可以访问 Gmail API 的 Google 账号
-
-## 安装
+## Quick Start
 
 ```bash
-npm install
-npm run build
+# Step 1: Authorize Gmail access (one-time setup)
+npx @symbolstar/gmail-mcp auth
+
+# Step 2: Done — the MCP server starts automatically when called by your client
 ```
 
-## 在 Google Cloud Console 创建 OAuth 凭证
+---
 
-1. 打开 [Google Cloud Console](https://console.cloud.google.com/)。
-2. 创建或选择一个项目。
-3. 进入 `APIs & Services` -> `Library`，搜索并启用 `Gmail API`。
-4. 进入 `APIs & Services` -> `OAuth consent screen`。
-5. 选择用户类型。个人使用通常选择 `External`。
-6. 填写应用名称、用户支持邮箱、开发者联系邮箱。
-7. 在 Scopes 步骤中添加 Gmail 只读权限：`https://www.googleapis.com/auth/gmail.readonly`。
-8. 如果应用处于 Testing 状态，在 Test users 中添加你的 Gmail 账号。
-9. 进入 `APIs & Services` -> `Credentials`。
-10. 点击 `Create Credentials` -> `OAuth client ID`。
-11. Application type 选择 `Desktop app`。
-12. 创建后下载 JSON 文件。
+## Setup Guide
 
-## 放置 credentials.json
+### Step 1 — Create a Google Cloud Project & Enable Gmail API
 
-创建配置目录，并把下载的 OAuth JSON 保存为：
+1. Open [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select an existing one)
+3. Go to **APIs & Services → Library**
+4. Search for **Gmail API** and click **Enable**
+
+### Step 2 — Configure OAuth Consent Screen
+
+1. Go to **APIs & Services → OAuth consent screen**
+2. Under **Get started**, fill in:
+   - **App name**: e.g. `Gmail MCP`
+   - **User support email**: your Gmail address
+3. Under **Audience**, select **External**
+4. Under **Data Access**, add the scope:
+   `https://www.googleapis.com/auth/gmail.readonly`
+5. Under **Audience → Test users**, add your Gmail address
+   > ⚠️ This step is required. Without it, you'll get `Error 403: access_denied` during authorization.
+
+### Step 3 — Create OAuth Credentials
+
+1. Go to **APIs & Services → Credentials**
+2. Click **Create Credentials → OAuth client ID**
+3. Application type: **Desktop app**
+4. Name it anything (e.g. `gmail-mcp-cli`)
+5. Click **Create**, then **Download JSON**
+
+### Step 4 — Place credentials.json
 
 ```bash
 mkdir -p ~/.gmail-mcp
 chmod 700 ~/.gmail-mcp
-cp /path/to/downloaded/client_secret.json ~/.gmail-mcp/credentials.json
+cp ~/Downloads/client_secret_*.json ~/.gmail-mcp/credentials.json
 chmod 600 ~/.gmail-mcp/credentials.json
 ```
 
-最终路径必须是：
-
-```text
+The file must be at:
+```
 ~/.gmail-mcp/credentials.json
 ```
 
-## 运行授权流程
+### Step 5 — Run Authorization
 
 ```bash
-npm run auth
+npx @symbolstar/gmail-mcp auth
 ```
 
-脚本会：
+This will:
+- Start a temporary local OAuth callback server
+- Open your browser for Google authorization
+- Save the token to `~/.gmail-mcp/token.json`
 
-- 启动一个临时本地 OAuth 回调服务
-- 打开浏览器进行 Google 授权
-- 授权完成后保存 token 到 `~/.gmail-mcp/token.json`
+If the browser doesn't open automatically, copy the URL printed in the terminal and open it manually.
 
-如果浏览器没有自动打开，终端会打印授权 URL，手动复制到浏览器即可。
+---
 
-## 启动 MCP Server
+## Integrate with OpenClaw
 
-```bash
-npm run start
-```
-
-`start` 使用 stdio transport，通常由 OpenClaw 作为 MCP server 子进程启动，不需要手动长期运行。
-
-## OpenClaw MCP 配置示例
-
-把命令指向本项目构建后的入口：
+Add the following to your `~/.openclaw/openclaw.json`:
 
 ```json
 {
-  "mcpServers": {
-    "gmail": {
-      "command": "node",
-      "args": ["/Volumes/DevDisk/symbol/gmailMCP/dist/src/index.js"]
+  "mcp": {
+    "servers": {
+      "gmail": {
+        "command": "npx",
+        "args": ["-y", "@symbolstar/gmail-mcp"]
+      }
     }
   }
 }
 ```
 
-也可以在项目目录内用 npm 启动：
+Then restart the gateway:
+
+```bash
+openclaw gateway restart
+```
+
+---
+
+## Integrate with Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "gmail": {
-      "command": "npm",
-      "args": ["run", "start"],
-      "cwd": "/Volumes/DevDisk/symbol/gmailMCP"
+      "command": "npx",
+      "args": ["-y", "@symbolstar/gmail-mcp"]
     }
   }
 }
 ```
 
-## Tools 参数说明
+---
 
-### list_emails
+## Available Tools
 
-列出收件箱邮件。
+### `list_emails`
 
-```json
-{
-  "maxResults": 10,
-  "query": "from:example@gmail.com newer_than:7d"
-}
-```
+List inbox emails.
 
-- `maxResults`：可选，默认 `10`，最大 `50`
-- `query`：可选，Gmail 搜索语法，会限制在 INBOX 内查询
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `maxResults` | number | 10 | Max emails to return (up to 50) |
+| `query` | string | — | Gmail search query (applied within INBOX) |
 
-### get_email
+### `get_email`
 
-读取单封邮件详情。
+Read a single email by ID.
 
-```json
-{
-  "messageId": "18f..."
-}
-```
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `messageId` | string | Gmail message ID |
 
-返回字段包含发件人、收件人、主题、日期、标签、正文文本、HTML 正文和附件元数据。
+Returns: sender, recipients, subject, date, labels, plain text body, HTML body, attachment metadata.
 
-### search_emails
+### `search_emails`
 
-搜索 Gmail 邮件。
+Search Gmail with full query syntax.
 
-```json
-{
-  "query": "subject:invoice has:attachment newer_than:30d",
-  "maxResults": 10
-}
-```
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | — | Gmail search query (required) |
+| `maxResults` | number | 10 | Max results (up to 50) |
 
-- `query`：必填，支持 Gmail 搜索语法
-- `maxResults`：可选，默认 `10`，最大 `50`
+### `list_labels`
 
-### list_labels
+List all Gmail labels and folders. No parameters required.
 
-列出所有标签/文件夹。
+---
 
-```json
-{}
-```
+## File Locations
 
-## 文件位置
+| File | Path |
+|------|------|
+| OAuth credentials | `~/.gmail-mcp/credentials.json` |
+| OAuth token | `~/.gmail-mcp/token.json` |
 
-- OAuth credentials：`~/.gmail-mcp/credentials.json`
-- OAuth token：`~/.gmail-mcp/token.json`
-- MCP server 入口：`dist/src/index.js`
+---
 
-## 常见问题
+## Troubleshooting
 
-### Missing Gmail OAuth credentials
+### `Missing Gmail OAuth credentials`
+Make sure you downloaded the OAuth client JSON and placed it at `~/.gmail-mcp/credentials.json`.
 
-确认已下载 Google OAuth client JSON，并保存到：
-
-```text
-~/.gmail-mcp/credentials.json
-```
-
-### Missing Gmail OAuth token
-
-先运行：
-
+### `Missing Gmail OAuth token`
+Run the authorization flow first:
 ```bash
-npm run auth
+npx @symbolstar/gmail-mcp auth
 ```
 
-### access_denied 或应用未验证
+### `Error 403: access_denied`
+Your Gmail account is not added as a Test user. Go to **Google Cloud Console → OAuth consent screen → Audience → Test users** and add your Gmail address.
 
-如果 OAuth consent screen 还在 Testing 状态，需要把当前 Gmail 账号添加到 Test users。
-
-### invalid_grant
-
-删除旧 token 后重新授权：
-
+### `invalid_grant`
+Token expired or revoked. Delete it and re-authorize:
 ```bash
 rm ~/.gmail-mcp/token.json
-npm run auth
+npx @symbolstar/gmail-mcp auth
 ```
+
+---
+
+## Requirements
+
+- Node.js 18+
+- A Google account with Gmail
+
+## License
+
+MIT
