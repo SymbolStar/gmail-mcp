@@ -1,0 +1,49 @@
+{
+  "name": "gmail-mcp-server",
+  "version": "0.1.0",
+  "description": "Gmail MCP server for reading Gmail messages via Model Context Protocol.",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "bin": {
+    "gmail-mcp": "dist/src/index.js",
+    "gmail-mcp-server": "dist/src/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "scripts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/index.js",
+    "auth": "tsx scripts/auth.ts",
+    "dev": "tsx src/index.ts"
+  },
+  "keywords": [
+    "gmail",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "googleapis": "^144.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
