@@ -17,9 +17,9 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/SymbolStar/gmail-mcp"
   },
-  "homepage": "",
+  "homepage": "https://github.com/SymbolStar/gmail-mcp#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/index.js",
